@@ -1,0 +1,269 @@
+<!-- payment-form.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Payment</title>
+</head>
+<body>
+    <h1>Process Payment</h1>
+    <form id="paymentForm">
+        <div>
+            <label for="orderId">Order ID:</label>
+            <input type="number" id="orderId" name="orderId" required>
+        </div>
+        <div>
+            <label for="amount">Amount:</label>
+            <input type="number" id="amount" name="amount" step="0.01" required>
+        </div>
+        <div>
+            <label for="paymentMethod">Payment Method:</label>
+            <select id="paymentMethod" name="paymentMethod" required>
+                <option value="">-- Select Payment Method --</option>
+                <option value="CREDIT_CARD">Credit Card</option>
+                <option value="DEBIT_CARD">Debit Card</option>
+                <option value="PAYPAL">PayPal</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+                <option value="CRYPTO">Cryptocurrency</option>
+            </select>
+        </div>
+        
+        <!-- Credit Card Details (shown/hidden based on selection) -->
+        <div id="creditCardFields">
+            <div>
+                <label for="cardNumber">Card Number:</label>
+                <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456">
+            </div>
+            <div>
+                <label for="cardHolderName">Card Holder Name:</label>
+                <input type="text" id="cardHolderName" name="cardHolderName">
+            </div>
+            <div>
+                <label for="expiryDate">Expiry Date:</label>
+                <input type="text" id="expiryDate" name="expiryDate" placeholder="MM/YY">
+            </div>
+            <div>
+                <label for="cvv">CVV:</label>
+                <input type="text" id="cvv" name="cvv" placeholder="123">
+            </div>
+        </div>
+        
+        <!-- PayPal Details -->
+        <div id="paypalFields" style="display: none;">
+            <div>
+                <label for="paypalEmail">PayPal Email:</label>
+                <input type="email" id="paypalEmail" name="paypalEmail">
+            </div>
+        </div>
+        
+        <div>
+            <button type="submit">Process Payment</button>
+        </div>
+    </form>
+    
+    <div id="responseArea" style="margin-top: 20px; display: none;">
+        <h2>Payment Result</h2>
+        <pre id="responseContent"></pre>
+    </div>
+    
+    <script>
+        // Show/hide payment method specific fields
+        document.getElementById('paymentMethod').addEventListener('change', function() {
+            if (this.value === 'CREDIT_CARD' || this.value === 'DEBIT_CARD') {
+                document.getElementById('creditCardFields').style.display = 'block';
+                document.getElementById('paypalFields').style.display = 'none';
+            } else if (this.value === 'PAYPAL') {
+                document.getElementById('creditCardFields').style.display = 'none';
+                document.getElementById('paypalFields').style.display = 'block';
+            } else {
+                document.getElementById('creditCardFields').style.display = 'none';
+                document.getElementById('paypalFields').style.display = 'none';
+            }
+        });
+        
+        // Handle form submission
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Create payment request object
+            const paymentRequest = {
+                orderId: parseInt(document.getElementById('orderId').value),
+                amount: parseFloat(document.getElementById('amount').value),
+                paymentMethod: document.getElementById('paymentMethod').value
+            };
+            
+            // Add payment method specific fields
+            if (paymentRequest.paymentMethod === 'CREDIT_CARD' || paymentRequest.paymentMethod === 'DEBIT_CARD') {
+                paymentRequest.cardNumber = document.getElementById('cardNumber').value;
+                paymentRequest.cardHolderName = document.getElementById('cardHolderName').value;
+                paymentRequest.expiryDate = document.getElementById('expiryDate').value;
+                paymentRequest.cvv = document.getElementById('cvv').value;
+            } else if (paymentRequest.paymentMethod === 'PAYPAL') {
+                paymentRequest.paypalEmail = document.getElementById('paypalEmail').value;
+            }
+            
+            // Send request to API
+            fetch('/api/payments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(paymentRequest),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display response
+                document.getElementById('responseArea').style.display = 'block';
+                document.getElementById('responseContent').textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                document.getElementById('responseArea').style.display = 'block';
+                document.getElementById('responseContent').textContent = 'Error: ' + error.message;
+            });
+        });
+    </script>
+</body>
+</html>
+
+<!-- payment-lookup.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Lookup</title>
+</head>
+<body>
+    <h1>Payment Lookup</h1>
+    
+    <div>
+        <h2>Find Payment by ID</h2>
+        <form id="findByIdForm">
+            <div>
+                <label for="paymentId">Payment ID:</label>
+                <input type="number" id="paymentId" name="paymentId" required>
+            </div>
+            <div>
+                <button type="submit">Find Payment</button>
+            </div>
+        </form>
+    </div>
+    
+    <div style="margin-top: 30px;">
+        <h2>Find Payments by Order ID</h2>
+        <form id="findByOrderForm">
+            <div>
+                <label for="orderIdLookup">Order ID:</label>
+                <input type="number" id="orderIdLookup" name="orderIdLookup" required>
+            </div>
+            <div>
+                <button type="submit">Find Payments</button>
+            </div>
+        </form>
+    </div>
+    
+    <div id="responseArea" style="margin-top: 30px; display: none;">
+        <h2>Results</h2>
+        <pre id="responseContent"></pre>
+    </div>
+    
+    <script>
+        // Handle finding payment by ID
+        document.getElementById('findByIdForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const paymentId = document.getElementById('paymentId').value;
+            
+            fetch(`/api/payments/${paymentId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Payment not found');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('responseArea').style.display = 'block';
+                    document.getElementById('responseContent').textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('responseArea').style.display = 'block';
+                    document.getElementById('responseContent').textContent = 'Error: ' + error.message;
+                });
+        });
+        
+        // Handle finding payments by order ID
+        document.getElementById('findByOrderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const orderId = document.getElementById('orderIdLookup').value;
+            
+            fetch(`/api/payments/order/${orderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('responseArea').style.display = 'block';
+                    document.getElementById('responseContent').textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('responseArea').style.display = 'block';
+                    document.getElementById('responseContent').textContent = 'Error: ' + error.message;
+                });
+        });
+    </script>
+</body>
+</html>
+
+<!-- payment-refund.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refund Payment</title>
+</head>
+<body>
+    <h1>Refund Payment</h1>
+    
+    <form id="refundForm">
+        <div>
+            <label for="refundPaymentId">Payment ID to Refund:</label>
+            <input type="number" id="refundPaymentId" name="refundPaymentId" required>
+        </div>
+        <div>
+            <button type="submit">Process Refund</button>
+        </div>
+    </form>
+    
+    <div id="responseArea" style="margin-top: 20px; display: none;">
+        <h2>Refund Result</h2>
+        <pre id="responseContent"></pre>
+    </div>
+    
+    <script>
+        // Handle refund form submission
+        document.getElementById('refundForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const paymentId = document.getElementById('refundPaymentId').value;
+            
+            fetch(`/api/payments/${paymentId}/refund`, {
+                method: 'POST'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.message || 'Refund failed'); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('responseArea').style.display = 'block';
+                document.getElementById('responseContent').textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                document.getElementById('responseArea').style.display = 'block';
+                document.getElementById('responseContent').textContent = 'Error: ' + error.message;
+            });
+        });
+    </script>
+</body>
+</html>
