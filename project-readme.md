@@ -155,7 +155,7 @@ Simple HTML forms are provided for testing:
 
 ## Cloud Deployment
 
-The service is designed to be deployed to a cloud platform (e.g., AWS, GCP, Azure):
+The service is designed to be deployed to a cloud platform (e.g., AWS, GCP, Azure)(AWS suggested by the professor):
 - Dockerfile for containerization
 - Stateless design for horizontal scaling
 - Configuration externalization
