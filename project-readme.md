@@ -169,6 +169,4 @@ The service is designed to be deployed to a cloud platform (e.g., AWS, GCP, Azur
 - Implement circuit breaker pattern for external service calls
 - Message queue integration for asynchronous processing
 
-## Contact
 
-For questions or support, contact the e-commerce team at team@ecommerce.com
